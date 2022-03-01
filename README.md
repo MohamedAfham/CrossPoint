@@ -6,39 +6,3 @@
 
 
 ## Training Details will be updated soon !!
-<!--
-## Dependencies
-
-Refer to `requirements.txt` for the required packages.
-
-## Pretrained Models
-
-CrossPoint pretrained models with DGCNN feature extractor are available [here.](https://drive.google.com/drive/folders/10TVEIRUBCh3OPulKI4i2whYAcKVdSURn?usp=sharing)
-
-## Download data
-
-Datasets are available [here](https://drive.google.com/drive/folders/1dAH9R3XDV0z69Bz6lBaftmJJyuckbPmR?usp=sharing). Run the command below to download all the datasets (ShapeNetRender, ModelNet40, ScanObjectNN, ShapeNetPart) to reproduce the results.
-
-```
-cd data
-source download_data.sh
-```
-
-## Train CrossPoint
-
-Refer to `scripts/script.sh` for the commands to train CrossPoint.
-
-## Downstream Tasks
-
-### 1. 3D Object Classification 
-
-Run `eval_ssl.ipynb` notebook to perform linear SVM object classification in both ModelNet40 and ScanObjectNN datasets.
-
-
-### 2. Few-Shot Object Classification
-
-Refer to `scripts/fsl_script.sh` to perform few-shot object classification.
-
-### 3. 3D Object Part Segmentation
-
-Refer to `scripts/script.sh` for fine-tuning experiment for part segmentation in ShapeNetPart dataset.-->
