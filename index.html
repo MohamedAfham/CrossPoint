@@ -118,7 +118,7 @@
 
 <html>
 <head>
-	<title>OPL</title>
+	<title>CrossPoint</title>
 	<meta property="og:image" content="Path to my teaser.png"/>
 	<meta property="og:title" content="Orthogonal Projection Loss" />
 	<meta property="og:description" content="Paper description." />
@@ -138,38 +138,43 @@
 <body>
 	<br>
 	<div style="text-align: center;">
-		<span style="font-size:42px">Orthogonal Projection Loss</span>
+		<span style="font-size:42px">CrossPoint: Self-Supervised Cross-Modal Contrastive Learning for 3D Point Cloud Understanding</span>
 		<br> <br>
 		<table align=center width=800px>
-			<table align=center width=500px>
+			<table align=center width=650px>
 				<tr>
 					<td align=center width=200px>
 						<center>
-							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=K2WBZTwAAAAJ">Kanchana Ranasinghe</a></span>
+							<span style="font-size:24px"><a href="https://mohamedafham.github.io">Mohamed Afham</a></span>
 						</center>
 					</td>
 					<td align=center width=200px>
 						<center>
-							<span style="font-size:24px"><a href="https://scholar.google.ch/citations?user=tM9xKA8AAAAJ">Muzammal Naseer</a></span>
+							<span style="font-size:24px">Isuru Dissanayake</span>
+						</center>
+					</td>
+					<td align=center width=200px>
+						<center>
+							<span style="font-size:24px">Dinithi Dissanayake</span>
 						</center>
 					</td>
 				</tr>
 			</table>
 			<table align=center width=700px>
 				<tr>
-					<td align=center width=180px>
+					<td align=center width=200px>
 						<center>
-							<span style="font-size:24px"><a href="https://scholar.google.ch/citations?user=Mx8MbWYAAAAJ">Munawar Hayat</a></span>
+							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=a1MvT1AAAAAJ&hl=en&oi=ao">Amaya Dharmasiri</a></span>
 						</center>
 					</td>
-					<td align=center width=180px>
+					<td align=center width=250px>
 						<center>
-							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=M59O9lkAAAAJ">Salman Khan</a></span>
+							<span style="font-size:24px"><a href="https://www.sydney.edu.au/engineering/about/our-people/academic-staff/kanchana-thilakarathna.html">Kanchana Thilakarathna</a></span>
 						</center>
 					</td>
-					<td align=center width=180px>
+					<td align=center width=200px>
 						<center>
-							<span style="font-size:24px"><a href="https://scholar.google.ch/citations?user=zvaeYnUAAAAJ">Fahad Khan</a></span>
+							<span style="font-size:24px"><a href="https://ranga.staff.uom.lk">Ranga Rodrigo</a></span>
 						</center>
 					</td>
 				</tr>
@@ -179,12 +184,12 @@
 				<tr>
 					<td align=center width=120px>
 						<div style="text-align: center;">
-							<span style="font-size:24px"><a href='https://arxiv.org/abs/2103.14021'>[Paper]</a></span>
+							<span style="font-size:24px"><a href='https://arxiv.org/abs/2203.00680'>[Paper]</a></span>
 						</div>
 					</td>
 					<td align=center width=120px>
 						<div style="text-align: center;">
-							<span style="font-size:24px"><a href='https://github.com/kahnchana/opl'>[GitHub]</a></span><br>
+							<span style="font-size:24px"><a href='https://github.com/MohamedAfham/CrossPoint'>[GitHub]</a></span><br>
 						</div>
 					</td>
 				</tr>
@@ -199,7 +204,7 @@
 
 				<td width=260px>
 					<div style="text-align: center;">
-						<img class="round" style="width:500px" src="./resources/opl_intro.png"/>
+						<img class="round" style="width:500px" src="./resources/crosspoint_intro.png"/>
 					</div>
 				</td>
 			</tr>
@@ -208,8 +213,8 @@
 			<tr>
 				<td>
 					<div style="text-align: justify;">
-					During training of a deep neural network, within each mini-batch, OPL enforces separation between
-					features of different class samples while clustering together features of the same class samples.
+					CrossPoint enforces a 3D-2D correspondence by maximizing agreement between 3D point cloud and the correspnding rendered 
+					2D image while imposing invariance to transformations in the point cloud modality. 
 					</div>
 				</td>
 			</tr>
@@ -223,35 +228,33 @@
 		<tr>
 			<td>
 				<div style="text-align: justify;">
-				Deep neural networks have achieved remarkable performance on a range of classification tasks, with
-				softmax cross-entropy (CE) loss emerging as the de-facto objective function. The CE loss encourages
-				features of a class to have a higher projection score on the true class-vector compared to the
-				negative classes. However, this is a relative constraint and does not explicitly force different class
-				features to be well-separated. Motivated by the observation that ground-truth class representations in
-				CE loss are orthogonal (one-hot encoded vectors), we develop a novel loss function termed “Orthogonal
-				Projection Loss” (OPL) which imposes orthogonality in the feature space. OPL augments the properties
-				of CE loss and directly enforces inter-class separation alongside intra-class clustering in the feature
-				space through orthogonality constraints on the mini-batch level. As compared to other alternatives of
-				CE, OPL offers unique advantages e.g., no additional learnable parameters, does not require careful
-				negative mining and is not sensitive to the batch size. Given the plug-and-play nature of OPL, we
-				evaluate it on a diverse range of tasks including image recognition (CIFAR-100), large-scale
-				classification (ImageNet), domain generalization (PACS) and few-shot learning (miniImageNet, CIFAR-FS,
-				tiered-ImageNet and Meta-dataset) and demonstrate its effectiveness across the board. Furthermore, OPL
-				offers better robustness against practical nuisances such as adversarial attacks and label noise.
+					Manual annotation of large-scale point cloud dataset for varying tasks such as 3D object classification,
+					segmentation and detection is often laborious owing to the irregular structure of point clouds. Self-supervised
+					learning, which operates without any human labeling, is a promising approach to address this issue. We observe
+					in the real world that humans are capable of mapping the visual concepts learnt from 2D images to understand 
+					the 3D world. Encouraged by this insight, we propose CrossPoint, a simple cross-modal contrastive learning approach 
+					to learn transferable 3D point cloud representations. It enables a 3D-2D correspondence of objects by maximizing 
+					agreement between point clouds and the corresponding rendered 2D image in the invariant space, while encouraging 
+					invariance to transformations in the point cloud modality. Our joint training objective combines the feature 
+					correspondences within and across modalities, thus ensembles a rich learning signal from both 3D point cloud and 
+					2D image modalities in a self-supervised fashion. Experimental results show that our approach outperforms the previous 
+					unsupervised learning methods on a diverse range of downstream tasks including 3D object classification and 
+					segmentation. Further, the ablation studies validate the potency of our approach for a better point cloud 
+					understanding.
 				</div>
 			</td>
 		</tr>
 	</table>
 	<br>
 
-	<hr>
-	<div style="text-align: center;"><h1>Talk</h1></div>
+	<!-- <hr> -->
+	<!-- <div style="text-align: center;"><h1>Talk</h1></div>
 	<p align="center">
 		<iframe width="660" height="395" src="https://www.youtube.com/embed/T4pGBvTvkyA" title="OPL" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-<!--		<iframe width="660" height="395" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen align="center"></iframe>-->
-	</p>
+		<iframe width="660" height="395" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen align="center"></iframe> -->
+	<!-- </p> -->
 
-	<table align=center width=800px>
+	<!-- <table align=center width=800px>
 		<br>
 		<tr>
 			<div style="text-align: center;">
@@ -259,7 +262,7 @@
 				</span>
 			</div>
 		</tr>
-	</table>
+	</table> -->
 	<hr>
 
 	<div style="text-align: center;"><h1>Try our code</h1></div>
@@ -272,7 +275,7 @@
 			</td>
 		</tr>
 	</table>
-	<table align=center width=850px>
+	<!-- <table align=center width=850px>
 		<div style="text-align: center;">
 			<tr>
 				<td>
@@ -286,11 +289,11 @@
 				</td>
 			</tr>
 		</div>
-	</table>
+	</table> -->
 	<table align=center width=800px>
 		<br>
 		<tr><div style="text-align: center;">
-			<span style="font-size:28px">&nbsp;<a href='https://github.com/kahnchana/opl'>[GitHub]</a>
+			<span style="font-size:28px">&nbsp;<a href='https://github.com/MohamedAfham/CrossPoint'>[GitHub]</a>
 			</div>
 		</tr>
 		</span>
@@ -299,13 +302,13 @@
 
 	<hr>
 	<table align=center width=500px>
-		<center><h1>Paper and Supplementary Material</h1></center>
+		<center><h1>Paper</h1></center>
 		<tr>
-			<td><a href="https://arxiv.org/abs/2103.14021"><img class="layered-paper-big" style="height:175px" src="./resources/paper.png"/></a></td>
+			<td><a href="https://arxiv.org/abs/2203.00680"><img class="layered-paper-big" style="height:175px" src="./resources/paper.png"/></a></td>
 			<td><span style="font-size:14pt">
-				<b>Orthogonal Projection Loss</b><br>
-				In ICCV, 2021.<br>
-				(hosted on <a href="https://arxiv.org/abs/2103.14021">ArXiv</a>)<br>
+				<b>CrossPoint</b><br>
+				In CVPR, 2022.<br>
+				(hosted on <a href="https://arxiv.org/abs/2203.0068">ArXiv</a>)<br>
 				<!-- (<a href="./resources/camera-ready.pdf">camera ready</a>)<br> -->
 				<span style="font-size:4pt"><a href=""><br></a>
 				</span>
@@ -321,7 +324,7 @@
 			</center></td>
 		</tr>
 	</table>
-	<hr>
+	<!-- <hr>
 
 	<table align=center width=900px>
 		<tr>
@@ -431,7 +434,7 @@
 			<td class="tg-wp8o">acc@1</td>
 		</tr>
 		</tbody>
-	</table>
+	</table> -->
 
 <!--	<table align=center width=900px>-->
 <!--		<tr>-->
