@@ -1,0 +1,6 @@
+@article{afham2022crosspoint,
+  title={CrossPoint: Self-Supervised Cross-Modal Contrastive Learning for 3D Point Cloud Understanding},
+  author={Mohamed Afham and Isuru Dissanayake and Dinithi Dissanayake and Amaya Dharmasiri and Kanchana Thilakarathna and Ranga Rodrigo},
+  journal={arXiv preprint arXiv:2203.00680},
+  year={2022}
+}

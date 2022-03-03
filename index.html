@@ -1,0 +1,449 @@
+<script src="http://www.google.com/jsapi" type="text/javascript"></script> 
+<script type="text/javascript">google.load("jquery", "1.3.2");</script>
+
+<style type="text/css">
+	body {
+		font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
+		font-weight:300;
+		font-size:18px;
+		margin-left: auto;
+		margin-right: auto;
+		width: 1100px;
+	}
+	
+	h1 {
+		font-size:32px;
+		font-weight:300;
+	}
+	
+	.disclaimerbox {
+		background-color: #eee;		
+		border: 1px solid #eeeeee;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+		padding: 20px;
+	}
+
+	video.header-vid {
+		height: 140px;
+		border: 1px solid black;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+	}
+	
+	img.header-img {
+		height: 140px;
+		border: 1px solid black;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+	}
+	
+	img.rounded {
+		border: 1px solid #eeeeee;
+		border-radius: 10px ;
+		-moz-border-radius: 10px ;
+		-webkit-border-radius: 10px ;
+	}
+	
+	a:link,a:visited
+	{
+		color: #1367a7;
+		text-decoration: none;
+	}
+	a:hover {
+		color: #208799;
+	}
+	
+	td.dl-link {
+		height: 160px;
+		text-align: center;
+		font-size: 22px;
+	}
+	
+	.layered-paper-big { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+		box-shadow:
+		0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+		5px 5px 0 0px #fff, /* The second layer */
+		5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+		10px 10px 0 0px #fff, /* The third layer */
+		10px 10px 1px 1px rgba(0,0,0,0.35), /* The third layer shadow */
+		15px 15px 0 0px #fff, /* The fourth layer */
+		15px 15px 1px 1px rgba(0,0,0,0.35), /* The fourth layer shadow */
+		20px 20px 0 0px #fff, /* The fifth layer */
+		20px 20px 1px 1px rgba(0,0,0,0.35), /* The fifth layer shadow */
+		25px 25px 0 0px #fff, /* The fifth layer */
+		25px 25px 1px 1px rgba(0,0,0,0.35); /* The fifth layer shadow */
+		margin-left: 10px;
+		margin-right: 45px;
+	}
+
+	.paper-big { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+		box-shadow:
+		0px 0px 1px 1px rgba(0,0,0,0.35); /* The top layer shadow */
+
+		margin-left: 10px;
+		margin-right: 45px;
+	}
+
+
+	.layered-paper { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+		box-shadow:
+		0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+		5px 5px 0 0px #fff, /* The second layer */
+		5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+		10px 10px 0 0px #fff, /* The third layer */
+		10px 10px 1px 1px rgba(0,0,0,0.35); /* The third layer shadow */
+		margin-top: 5px;
+		margin-left: 10px;
+		margin-right: 30px;
+		margin-bottom: 5px;
+	}
+	
+	.vert-cent {
+		position: relative;
+		top: 50%;
+		transform: translateY(-50%);
+	}
+	
+	hr
+	{
+		border: 0;
+		height: 1px;
+		background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+	}
+</style>
+
+<html>
+<head>
+	<title>OPL</title>
+	<meta property="og:image" content="Path to my teaser.png"/>
+	<meta property="og:title" content="Orthogonal Projection Loss" />
+	<meta property="og:description" content="Paper description." />
+
+	<!-- Get from Google Analytics -->
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+	<script async src=""></script> 
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+
+		gtag('config', 'UA-75863369-6');
+	</script>
+</head>
+
+<body>
+	<br>
+	<div style="text-align: center;">
+		<span style="font-size:42px">Orthogonal Projection Loss</span>
+		<br> <br>
+		<table align=center width=800px>
+			<table align=center width=500px>
+				<tr>
+					<td align=center width=200px>
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=K2WBZTwAAAAJ">Kanchana Ranasinghe</a></span>
+						</center>
+					</td>
+					<td align=center width=200px>
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.ch/citations?user=tM9xKA8AAAAJ">Muzammal Naseer</a></span>
+						</center>
+					</td>
+				</tr>
+			</table>
+			<table align=center width=700px>
+				<tr>
+					<td align=center width=180px>
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.ch/citations?user=Mx8MbWYAAAAJ">Munawar Hayat</a></span>
+						</center>
+					</td>
+					<td align=center width=180px>
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.com/citations?user=M59O9lkAAAAJ">Salman Khan</a></span>
+						</center>
+					</td>
+					<td align=center width=180px>
+						<center>
+							<span style="font-size:24px"><a href="https://scholar.google.ch/citations?user=zvaeYnUAAAAJ">Fahad Khan</a></span>
+						</center>
+					</td>
+				</tr>
+			</table>
+		<br>
+			<table align=center width=250px>
+				<tr>
+					<td align=center width=120px>
+						<div style="text-align: center;">
+							<span style="font-size:24px"><a href='https://arxiv.org/abs/2103.14021'>[Paper]</a></span>
+						</div>
+					</td>
+					<td align=center width=120px>
+						<div style="text-align: center;">
+							<span style="font-size:24px"><a href='https://github.com/kahnchana/opl'>[GitHub]</a></span><br>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</table>
+		<br>
+	</div>
+
+	<div style="text-align: center;">
+		<table align=center width=850px>
+			<tr>
+
+				<td width=260px>
+					<div style="text-align: center;">
+						<img class="round" style="width:500px" src="./resources/opl_intro.png"/>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<table align=center width=500px>
+			<tr>
+				<td>
+					<div style="text-align: justify;">
+					During training of a deep neural network, within each mini-batch, OPL enforces separation between
+					features of different class samples while clustering together features of the same class samples.
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+
+	<hr>
+
+	<table align=center width=850px>
+		<div style="text-align: center;"><h1>Abstract</h1></div>
+		<tr>
+			<td>
+				<div style="text-align: justify;">
+				Deep neural networks have achieved remarkable performance on a range of classification tasks, with
+				softmax cross-entropy (CE) loss emerging as the de-facto objective function. The CE loss encourages
+				features of a class to have a higher projection score on the true class-vector compared to the
+				negative classes. However, this is a relative constraint and does not explicitly force different class
+				features to be well-separated. Motivated by the observation that ground-truth class representations in
+				CE loss are orthogonal (one-hot encoded vectors), we develop a novel loss function termed “Orthogonal
+				Projection Loss” (OPL) which imposes orthogonality in the feature space. OPL augments the properties
+				of CE loss and directly enforces inter-class separation alongside intra-class clustering in the feature
+				space through orthogonality constraints on the mini-batch level. As compared to other alternatives of
+				CE, OPL offers unique advantages e.g., no additional learnable parameters, does not require careful
+				negative mining and is not sensitive to the batch size. Given the plug-and-play nature of OPL, we
+				evaluate it on a diverse range of tasks including image recognition (CIFAR-100), large-scale
+				classification (ImageNet), domain generalization (PACS) and few-shot learning (miniImageNet, CIFAR-FS,
+				tiered-ImageNet and Meta-dataset) and demonstrate its effectiveness across the board. Furthermore, OPL
+				offers better robustness against practical nuisances such as adversarial attacks and label noise.
+				</div>
+			</td>
+		</tr>
+	</table>
+	<br>
+
+	<hr>
+	<div style="text-align: center;"><h1>Talk</h1></div>
+	<p align="center">
+		<iframe width="660" height="395" src="https://www.youtube.com/embed/T4pGBvTvkyA" title="OPL" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<!--		<iframe width="660" height="395" src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen align="center"></iframe>-->
+	</p>
+
+	<table align=center width=800px>
+		<br>
+		<tr>
+			<div style="text-align: center;">
+				<span style="font-size:28px"><a href='./files/opl_presentation_slides.pdf'>[Slides]</a>
+				</span>
+			</div>
+		</tr>
+	</table>
+	<hr>
+
+	<div style="text-align: center;"><h1>Try our code</h1></div>
+	<table align=center width=400px>
+		<tr>
+			<td align=center width=400px>
+				<div style="text-align: center;">
+					<td><img class="round" style="width:800px" src="./resources/code_intro.png"/></td>
+				</div>
+			</td>
+		</tr>
+	</table>
+	<table align=center width=850px>
+		<div style="text-align: center;">
+			<tr>
+				<td>
+					<div style="text-align: justify;">
+					Feature Analysis: We compare feature orthogonality as measured by OPL and feature similarity as
+					measured by cosine similarity and plot their convergence during training. Feature similarity is
+					initially high because all features are random immediately after initialization. OPL simultaneously
+					enforces higher inter-class similarity and intra-class dissimilarity in comparison with the CE
+					baseline.
+					</div>
+				</td>
+			</tr>
+		</div>
+	</table>
+	<table align=center width=800px>
+		<br>
+		<tr><div style="text-align: center;">
+			<span style="font-size:28px">&nbsp;<a href='https://github.com/kahnchana/opl'>[GitHub]</a>
+			</div>
+		</tr>
+		</span>
+	</table>
+	<br>
+
+	<hr>
+	<table align=center width=500px>
+		<center><h1>Paper and Supplementary Material</h1></center>
+		<tr>
+			<td><a href="https://arxiv.org/abs/2103.14021"><img class="layered-paper-big" style="height:175px" src="./resources/paper.png"/></a></td>
+			<td><span style="font-size:14pt">
+				<b>Orthogonal Projection Loss</b><br>
+				In ICCV, 2021.<br>
+				(hosted on <a href="https://arxiv.org/abs/2103.14021">ArXiv</a>)<br>
+				<!-- (<a href="./resources/camera-ready.pdf">camera ready</a>)<br> -->
+				<span style="font-size:4pt"><a href=""><br></a>
+				</span>
+			</td>
+		</tr>
+	</table>
+	<br>
+
+	<table align=center width=600px>
+		<tr>
+			<td><span style="font-size:14pt"><center>
+				<a href="./resources/bibtex.txt">[Bibtex]</a>
+			</center></td>
+		</tr>
+	</table>
+	<hr>
+
+	<table align=center width=900px>
+		<tr>
+			<td width=400px>
+				<left>
+					<center><h1>Results across tasks</h1></center>
+				</left>
+			</td>
+		</tr>
+	</table>
+
+	<style type="text/css">
+		.tg  {border-collapse:collapse;border-spacing:0;margin:0px auto;}
+		.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+			overflow:hidden;padding:10px 5px;word-break:normal;}
+		.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+			font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+		.tg .tg-wp8o{border-color:#000000;text-align:center;vertical-align:top}
+		.tg .tg-qhnr{background-color:#ecf4ff;border-color:#000000;text-align:center;vertical-align:top}
+	</style>
+	<table class="tg">
+		<thead>
+		<tr>
+			<th class="tg-qhnr">Task</th>
+			<th class="tg-qhnr">Dataset</th>
+			<th class="tg-qhnr">Baseline</th>
+			<th class="tg-qhnr">OPL</th>
+			<th class="tg-qhnr">Metric</th>
+		</tr>
+		</thead>
+		<tbody>
+		<tr>
+			<td class="tg-wp8o">Classification</td>
+			<td class="tg-wp8o">CIFAR-100</td>
+			<td class="tg-wp8o">72.40%</td>
+			<td class="tg-wp8o"><span style="font-weight:400;font-style:normal">73.52%</span></td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o"><span style="font-weight:400;font-style:normal">Classification</span></td>
+			<td class="tg-wp8o">ImageNet</td>
+			<td class="tg-wp8o">78.31%</td>
+			<td class="tg-wp8o">79.26%</td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Few Shot Classification</td>
+			<td class="tg-wp8o">CIFAR-FS</td>
+			<td class="tg-wp8o">71.45%</td>
+			<td class="tg-wp8o">73.02%</td>
+			<td class="tg-wp8o">1-shot</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Few Shot Classification</td>
+			<td class="tg-wp8o">MiniImageNet</td>
+			<td class="tg-wp8o">62.02%</td>
+			<td class="tg-wp8o">63.10%</td>
+			<td class="tg-wp8o">1-shot</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Few Shot Classification</td>
+			<td class="tg-wp8o">TieredImageNet</td>
+			<td class="tg-wp8o">69.74%</td>
+			<td class="tg-wp8o">70.20%</td>
+			<td class="tg-wp8o">1-shot</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Few Shot Classification</td>
+			<td class="tg-wp8o">MetaDataset (avg)</td>
+			<td class="tg-wp8o">71.4%</td>
+			<td class="tg-wp8o">71.9%</td>
+			<td class="tg-wp8o">varying shot</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Domain Generalization</td>
+			<td class="tg-wp8o">PACS (avg)</td>
+			<td class="tg-wp8o">87.47%</td>
+			<td class="tg-wp8o">88.48%</td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Label Noise</td>
+			<td class="tg-wp8o">CIFAR-10</td>
+			<td class="tg-wp8o">87.62%</td>
+			<td class="tg-wp8o">88.45%</td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Label Noise</td>
+			<td class="tg-wp8o">CIFAR-100</td>
+			<td class="tg-wp8o">62.64%</td>
+			<td class="tg-wp8o">65.62%</td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o">Adversarial Robustness</td>
+			<td class="tg-wp8o">CIFAR-10</td>
+			<td class="tg-wp8o">54.92%</td>
+			<td class="tg-wp8o">55.73%</td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		<tr>
+			<td class="tg-wp8o"><span style="font-weight:400;font-style:normal">Adversarial Robustness</span></td>
+			<td class="tg-wp8o">CIFAR-100</td>
+			<td class="tg-wp8o">28.42%</td>
+			<td class="tg-wp8o">30.05%</td>
+			<td class="tg-wp8o">acc@1</td>
+		</tr>
+		</tbody>
+	</table>
+
+<!--	<table align=center width=900px>-->
+<!--		<tr>-->
+<!--			<td width=400px>-->
+<!--				<left>-->
+<!--					<center><h1>Acknowledgements</h1></center>-->
+<!--					This template was originally made by <a href="http://web.mit.edu/phillipi/">Phillip Isola</a> and <a href="http://richzhang.github.io/">Richard Zhang</a> for a <a href="http://richzhang.github.io/colorization/">colorful</a> ECCV project; the code can be found <a href="https://github.com/richzhang/webpage-template">here</a>.-->
+<!--				</left>-->
+<!--			</td>-->
+<!--		</tr>-->
+<!--	</table>-->
+
+<br>
+</body>
+</html>
