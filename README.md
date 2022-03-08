@@ -50,7 +50,7 @@ Refer to `scripts/fsl_script.sh` to perform few-shot object classification.
 
 ### 3. 3D Object Part Segmentation
 
-Refer to `scripts/script.sh` for fine-tuning experiment for part segmentation in ShapeNetPart dataset.
+Refer `scripts/script.sh` for fine-tuning experiment for part segmentation in ShapeNetPart dataset.
 
 ## Acknowledgements
 Our code borrows heavily from [DGCNN](https://github.com/WangYueFt/dgcnn) repository. We thank the authors for releasing their code. If you use our model, please consider citing them as well.
