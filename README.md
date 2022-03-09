@@ -18,7 +18,7 @@ If you find our work, this repository, or pretrained models useful, please consi
 
 ## Dependencies
 
-Refer to `requirements.txt` for the required packages.
+Refer `requirements.txt` for the required packages.
 
 ## Pretrained Models
 
@@ -35,7 +35,7 @@ source download_data.sh
 
 ## Train CrossPoint
 
-Refer to `scripts/script.sh` for the commands to train CrossPoint.
+Refer `scripts/script.sh` for the commands to train CrossPoint.
 
 ## Downstream Tasks
 
@@ -46,7 +46,7 @@ Run `eval_ssl.ipynb` notebook to perform linear SVM object classification in bot
 
 ### 2. Few-Shot Object Classification
 
-Refer to `scripts/fsl_script.sh` to perform few-shot object classification.
+Refer `scripts/fsl_script.sh` to perform few-shot object classification.
 
 ### 3. 3D Object Part Segmentation
 
