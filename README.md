@@ -8,12 +8,13 @@
 
 If you find our work, this repository, or pretrained models useful, please consider giving a star ⭐ and citation.
 ```bibtex
-@article{afham2022crosspoint,
-  title={CrossPoint: Self-Supervised Cross-Modal Contrastive Learning for 3D Point Cloud Understanding},
-  author={Mohamed Afham and Isuru Dissanayake and Dinithi Dissanayake and Amaya Dharmasiri and Kanchana Thilakarathna and Ranga Rodrigo},
-  journal = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year={2022}
-}
+@inproceedings{afham2022crosspoint,
+    title={CrossPoint: Self-Supervised Cross-Modal Contrastive Learning for 3D Point Cloud Understanding}, 
+    author={Mohamed Afham and Isuru Dissanayake and Dinithi Dissanayake and Amaya Dharmasiri and Kanchana Thilakarathna and Ranga Rodrigo},
+    booktitle={IEEE/CVF International Conference on Computer Vision and Pattern Recognition},
+    month = {June},
+    year={2022}
+  }
 ```
 
 ## Dependencies
