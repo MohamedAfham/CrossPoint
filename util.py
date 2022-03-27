@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import math
 import random
+import datetime
 
 
 def cal_loss(pred, gold, smoothing=True):
@@ -31,8 +32,9 @@ class IOStream():
         self.f = open(path, 'a')
 
     def cprint(self, text):
-        print(text)
-        self.f.write(text+'\n')
+        time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        print('[%s] '%time + text)
+        self.f.write('[%s] '%time + text+'\n')
         self.f.flush()
 
     def close(self):

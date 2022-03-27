@@ -22,8 +22,8 @@ def download_shapenetpart():
 
 def load_data_partseg(partition):
     # download_shapenetpart()
-    BASE_DIR = ''
-    DATA_DIR = os.path.join(BASE_DIR, 'data')
+    BASE_DIR = '/mnt/sdb/public/data'
+    DATA_DIR = os.path.join(BASE_DIR, 'common-datasets')
     all_data = []
     all_label = []
     all_seg = []

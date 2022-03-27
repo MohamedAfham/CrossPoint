@@ -33,6 +33,11 @@ def _init_():
     if not os.path.exists('outputs/'+args.exp_name+'/'+'models'):
         os.makedirs('outputs/'+args.exp_name+'/'+'models')
 
+    WB_SERVER_URL = "http://202.112.113.241:28282"
+    WB_KEY = "local-9924b9666281a61be5d62b358e344c790f1c3954"
+    os.environ["WANDB_BASE_URL"] = WB_SERVER_URL
+    wandb.login(key=WB_KEY)
+
 
 def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
     if not visual:
@@ -57,6 +62,7 @@ def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
         shape_ious.append(np.mean(part_ious))
     return shape_ious
 
+
 def train(args, io):
     train_dataset = ShapeNetPart(partition='trainval', num_points=args.num_points, class_choice=args.class_choice)
     if (len(train_dataset) < 100):
@@ -74,10 +80,10 @@ def train(args, io):
     seg_start_index = train_loader.dataset.seg_start_index
     model = DGCNN_partseg(args, seg_num_all, pretrain=False).to(device)    
         
+    # comment by jerry
     model_path = args.pretrained_path
     net = torch.load(model_path)
     model.load_state_dict(net, strict=False)
-    
     print("Model Loaded!!!")
 
     if args.use_sgd:
@@ -111,6 +117,14 @@ def train(args, io):
         train_true_seg = []
         train_pred_seg = []
         train_label_seg = []
+
+        """
+            train_loader的每一项，是一个点云，包含2048个点，每个点是三维坐标
+            data: 一个batch的点云数据                 (batch_size, num_points, 3)
+            label: 对batch点云类别标签，共16个类别     (batch_size, 1)
+            seg: 对应batch中每项点云每个点的语义类别    (batch_size, num_points)
+        """
+        # print('type(train_loader):', type(train_loader))
         for data, label, seg in train_loader:
             seg = seg - seg_start_index
             label_one_hot = np.zeros((label.shape[0], 16))
@@ -216,7 +230,6 @@ def train(args, io):
             best_test_iou = np.mean(test_ious)
             torch.save(model.state_dict(), 'outputs/%s/models/model.t7' % args.exp_name)
             
-        
         wandb.log(wandb_log)
 
 

@@ -2,6 +2,7 @@ from __future__ import print_function
 import os
 import random
 import argparse
+import datetime
 import torch
 import math
 import numpy as np
@@ -31,9 +32,14 @@ def _init_():
     if not os.path.exists('checkpoints/'+args.exp_name+'/'+'models'):
         os.makedirs('checkpoints/'+args.exp_name+'/'+'models')
 
+    # WB_SERVER_URL = "http://202.112.113.241:28282"
+    # WB_KEY = "local-9924b9666281a61be5d62b358e344c790f1c3954"
+    # os.environ["WANDB_BASE_URL"] = WB_SERVER_URL
+    # wandb.login(key=WB_KEY)
+
+   
 def train(args, io):
-    
-    wandb.init(project="CrossPoint", name=args.exp_name)
+    # wandb.init(project="CrossPoint", name=args.exp_name)
     
     transform = transforms.Compose([transforms.Resize((224, 224)),
                                 transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
@@ -44,7 +50,7 @@ def train(args, io):
     train_loader = DataLoader(ShapeNetRender(transform, n_imgs = 2), num_workers=0,
                               batch_size=args.batch_size, shuffle=True, drop_last=True)
 
-    device = torch.device("cuda" if args.cuda else "cpu")
+    device = torch.device("cuda:%s" % args.gpu_id if args.cuda else "cpu")
 
     #Try to load models
     if args.model == 'dgcnn':
@@ -57,28 +63,28 @@ def train(args, io):
     img_model = ResNet(resnet50(), feat_dim = 2048)
     img_model = img_model.to(device)
         
-    wandb.watch(point_model)
+    # wandb.watch(point_model)
     
     if args.resume:
-        model.load_state_dict(torch.load(args.model_path))
+        point_model.load_state_dict(torch.load(args.model_path))
+        img_model.load_state_dict(torch.load(args.img_model_path))
         print("Model Loaded !!")
         
+    # NOTE: 不同模型参数，还能这么用
     parameters = list(point_model.parameters()) + list(img_model.parameters())
 
     if args.use_sgd:
         print("Use SGD")
-        opt = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=1e-6)
+        opt = optim.SGD(point_model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=1e-6)
     else:
         print("Use Adam")
         opt = optim.Adam(parameters, lr=args.lr, weight_decay=1e-6)
 
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.epochs, eta_min=0, last_epoch=-1)
+    lr_scheduler = CosineAnnealingLR(opt, T_max=args.epochs, eta_min=0, last_epoch=-1)
     criterion = NTXentLoss(temperature = 0.1).to(device)
     
     best_acc = 0
     for epoch in range(args.start_epoch, args.epochs):
-        lr_scheduler.step()
-    
         ####################
         # Train
         ####################
@@ -88,7 +94,7 @@ def train(args, io):
         
         point_model.train()
         img_model.train()
-        wandb_log = {}
+        # wandb_log = {}
         print(f'Start training epoch: ({epoch}/{args.epochs})')
         for i, ((data_t1, data_t2), imgs) in enumerate(train_loader):
             data_t1, data_t2, imgs = data_t1.to(device), data_t2.to(device), imgs.to(device)
@@ -115,16 +121,19 @@ def train(args, io):
             train_imid_losses.update(loss_imid.item(), batch_size)
             train_cmid_losses.update(loss_cmid.item(), batch_size)
             
-            
+            time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             if i % args.print_freq == 0:
-                print('Epoch (%d), Batch(%d/%d), loss: %.6f, imid loss: %.6f, cmid loss: %.6f ' % (epoch, i, len(train_loader), train_losses.avg, train_imid_losses.avg, train_cmid_losses.avg))
-                
-        wandb_log['Train Loss'] = train_losses.avg
-        wandb_log['Train IMID Loss'] = train_imid_losses.avg
-        wandb_log['Train CMID Loss'] = train_cmid_losses.avg
+                print('[%s] Epoch (%d), Batch(%d/%d), loss: %.6f, imid loss: %.6f, cmid loss: %.6f ' % (time, epoch, i, len(train_loader), train_losses.avg, train_imid_losses.avg, train_cmid_losses.avg))
+        
+        # In PyTorch 1.1.0 and later, you should call lr_scheduler.step() after optimizer.step()
+        lr_scheduler.step()
+    
+        # wandb_log['Train Loss'] = train_losses.avg
+        # wandb_log['Train IMID Loss'] = train_imid_losses.avg
+        # wandb_log['Train CMID Loss'] = train_cmid_losses.avg
                 
         outstr = 'Train %d, loss: %.6f' % (epoch, train_losses.avg)
-        io.cprint(outstr)  
+        io.cprint(outstr)
         
         # Testing
         
@@ -167,7 +176,7 @@ def train(args, io):
         model_tl = SVC(C = 0.1, kernel ='linear')
         model_tl.fit(feats_train, labels_train)
         test_accuracy = model_tl.score(feats_test, labels_test)
-        wandb_log['Linear Accuracy'] = test_accuracy
+        # wandb_log['Linear Accuracy'] = test_accuracy
         print(f"Linear Accuracy : {test_accuracy}")
         
         if test_accuracy > best_acc:
@@ -187,7 +196,7 @@ def train(args, io):
                                      'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
             torch.save(point_model.state_dict(), save_file)
 
-        wandb.log(wandb_log)
+        # wandb.log(wandb_log)
     
     print('==> Saving Last Model...')
     save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
@@ -221,6 +230,8 @@ if __name__ == "__main__":
                         help='SGD momentum (default: 0.9)')
     parser.add_argument('--no_cuda', type=bool, default=False,
                         help='enables CUDA training')
+    parser.add_argument('--gpu_id', type=int, default=0, help='specify the GPU device'
+                        'to train of finetune model')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
     parser.add_argument('--eval', type=bool,  default=False,
@@ -236,6 +247,8 @@ if __name__ == "__main__":
     parser.add_argument('--resume', action="store_true", help='resume from checkpoint')
     parser.add_argument('--model_path', type=str, default='', metavar='N',
                         help='Pretrained model path')
+    parser.add_argument('--img_model_path', type=str, default='', metavar='N',
+                        help='Pretrained image model path')
     parser.add_argument('--save_freq', type=int, default=50, help='save frequency')
     parser.add_argument('--print_freq', type=int, default=50, help='print frequency')
     args = parser.parse_args()
@@ -243,10 +256,11 @@ if __name__ == "__main__":
     _init_()
 
     io = IOStream('checkpoints/' + args.exp_name + '/run.log')
-    io.cprint(str(args))
+    io.cprint('%s' % (args))
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     torch.manual_seed(args.seed)
+    
     if args.cuda:
         io.cprint(
             'Using GPU : ' + str(torch.cuda.current_device()) + ' from ' + str(torch.cuda.device_count()) + ' devices')
