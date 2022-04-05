@@ -91,7 +91,7 @@ class DGCNN(nn.Module):
             self.linear2 = nn.Linear(512, 256)
             self.bn7 = nn.BatchNorm1d(256)
             self.dp2 = nn.Dropout(p=args.dropout)
-            self.linear3 = nn.Linear(256, output_channels)
+            self.linear3 = nn.Linear(256, cls)
         
         self.cls = cls
         
