@@ -28,3 +28,47 @@
     - 我对代码做了什么？为什么后来训练一直报这个错误
         - 终于搞清楚了，是因为加了 wandb 日志监控的问题，去掉就没事了
         - 随之而来一个问题是，如何在有 wandb 情况下训练模型
+
+7. 实验中观察到的现象
+    - cmid_loss 总是大于 imid_loss，也就是说模态内部更好取得一致，而跨模态相对困难，这是好理解的
+        - 说明跨模态没训练好
+        - 所以设计loss的时候，加大对 cmid_loss 的惩罚力度
+        - 可以把这个可视化出来
+
+7. 分布式训练遇到的问题
+    1. 感觉没有真正进入内层 train_loader，跳过去了，这是为什么？
+        - 打印出来train_loader长度为0，没加载进来数据，这是什么情况
+        - 为什么会这样，路径和实验室服务器一模一样啊
+        - 【破案】ShapeNetRender除了加载图片，还加载了点云，而我的点云文件夹 ShapeNet 之前没考过来
+
+    2. 输出信息重复多次，只要一个汇总数据就够了
+    3. 类似的问题，写日志只要一个进程写汇总数据就行了
+    4. 关键问题：如何汇总不同机器的数据，得到想要的loss, accuracy
+        - 【重点突破这个问题】
+        
+        - 目前训练loss通过 averagemeter 看的，这到底是单卡上结果，还是多卡平均的结果
+            - 看样子是单卡，因为每个进程会初始化模型
+            - 怎么搞到多卡的数据
+
+    5. test_batch_size 应该设大大点，128
+
+    6. SVM 是在CPU上训练的，因为训练和测试特征都用了 feats.detach().cpu().numpy()
+
+    7. 把李老师服务器的docker装上
+
+    8. train_partseg.py 中测试代码重复，搞成一份
+
+    9. train_crosspoint.py，对dgcnn_seg做预训练的时候，出现问题
+        1. passing the keyword argument find_unused_parameters=True to torch.nn.parallel.DistributedDataParallel
+        2. making sure all forward function outputs participate in calculating loss.
+        If you already have done the above two steps, then the distributed data parallel module wasn't able to locate the output tensors in the return 
+        - value of your module's forward function. Please include the loss function and the structure of the return value of forward of your module when reporting this issue (e.g. list, dict, iterable).
+
+        - 【解决了】之前DGCNN_seg，在预训练的情况下，返回3个参数，只有中间的inv_feats用在了损失计算，其余两个值没用到，所以 forward() 返回值仅保留inv_feats即可
+
+    10. 搜集每个epoch内部的平均值太耗时，而且意义不大，还是在每个epoch结束之后搞吧
+        - 什么情况，一到测试的时候就卡住了，为什么会卡住？
+        - 是wandb的问题吗？
+        - 看来也得在rank=0使用wandb
+
+8. 单独测试时，想要快速，得把向量保存下来，直接load
