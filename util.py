@@ -28,17 +28,26 @@ def cal_loss(pred, gold, smoothing=True):
 
 
 class IOStream():
-    def __init__(self, path):
-        self.f = open(path, 'a')
+    """
+        When distributed training on multiple GPUs, only write logs through the results obtained by
+             the first gpu device whose rank=0, otherwise produce duplicate logs
+
+        When training on single GPU, the device rank is also 0
+    """
+    def __init__(self, path, rank=-1):
+        self.rank = rank
+        if self.rank == 0:
+            self.f = open(path, 'a')
 
     def cprint(self, text):
-        time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        print('[%s] '%time + text)
-        self.f.write('[%s] '%time + text+'\n')
-        self.f.flush()
+        if self.rank == 0:
+            print(text)
+            self.f.write(text+'\n')
+            self.f.flush()
 
     def close(self):
-        self.f.close()
+        if self.rank == 0:
+            self.f.close()
 
 def adjust_learning_rate(epoch, opt, optimizer):
     """Sets the learning rate to the initial LR decayed by decay rate every steep step"""
