@@ -81,13 +81,13 @@ def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
 
 
 def train(rank):
+    if rank == 0:
+        wandb.init(project="CrossPoint", name=args.exp_name)
+
     setup(rank)
 
     # only log text on the first gpu device whose rank=0
     io = IOStream('outputs/' + args.exp_name + '/run.log', rank=rank)
-
-    if rank == 0:
-        wandb.init(project="CrossPoint", name=args.exp_name)
 
     train_dataset = ShapeNetPart(partition='trainval', num_points=args.num_points, class_choice=args.class_choice)
     train_sampler = DistributedSampler(train_dataset, num_replicas=args.world_size, rank=rank)
@@ -353,11 +353,14 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
 
     if args.cuda:
-        io.cprint('CUDA is available! Using %d GPUs for DDP training' % args.world_size)
-        io.close()
-
-        torch.cuda.manual_seed(args.seed)
-        mp.spawn(train, nprocs=args.world_size)
+        num_device = torch.cuda.device_count()
+        if num_device > 1:
+            io.cprint('CUDA is available! Using %d GPUs for DDP training' % num_device)
+            io.close()
+            torch.cuda.manual_seed(args.seed)
+            mp.spawn(train, nprocs=args.world_size)
+        else:
+            io.cprint('Only one GPU is available, please use train_partseg.py')
 
     else:
         io.cprint('CUDA is unavailable! Exit')

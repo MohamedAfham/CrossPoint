@@ -152,7 +152,7 @@ def train(rank):
             opt.zero_grad()
             data = torch.cat((data_t1, data_t2))
             data = data.transpose(2, 1).contiguous()
-            point_feats = point_model_ddp(data)[0]
+            point_feats = point_model_ddp(data)[1]
             img_feats = img_model_ddp(imgs)
             
             point_t1_feats = point_feats[:batch_size, :]
@@ -229,7 +229,7 @@ def train(rank):
             labels = list(map(lambda x: x[0],label.numpy().tolist()))
             data = data.permute(0, 2, 1).to(rank)
             with torch.no_grad():
-                feats = point_model_ddp(data)[1]
+                feats = point_model_ddp(data)[2]
             feats = feats.detach().cpu().numpy()
             for feat in feats:
                 feats_train.append(feat)
@@ -245,7 +245,7 @@ def train(rank):
             labels = list(map(lambda x: x[0],label.numpy().tolist()))
             data = data.permute(0, 2, 1).to(rank)
             with torch.no_grad():
-                feats = point_model_ddp(data)[1]
+                feats = point_model_ddp(data)[2]
             feats = feats.detach().cpu().numpy()
             for feat in feats:
                 feats_test.append(feat)
@@ -320,11 +320,14 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     
     if args.cuda:
-        io.cprint('CUDA is available! Using %d GPUs for DDP training' % args.world_size)
-        io.close()
-
-        torch.cuda.manual_seed(args.seed)
-        mp.spawn(train, nprocs=args.world_size)
+        num_device = torch.cuda.device_count()
+        if num_device > 1:
+            io.cprint('CUDA is available! Using %d GPUs for DDP training' % num_device)
+            io.close()
+            torch.cuda.manual_seed(args.seed)
+            mp.spawn(train, nprocs=args.world_size)
+        else:
+            io.cprint('Only one GPU is available, please use train_crosspoint.py')
 
     else:
         io.cprint('CUDA is unavailable! Exit')
