@@ -1,22 +1,17 @@
 from __future__ import print_function
 import os
-import random
 import argparse
 import datetime
 import torch
-import math
 import numpy as np
 import wandb
 from lightly.loss.ntx_ent_loss import NTXentLoss
-import time
 from sklearn.svm import SVC
 
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import torchvision.transforms as transforms
-from torchvision.models import resnet50, resnet18
+from torchvision.models import resnet50
 from torch.utils.data import DataLoader
 
 from datasets.data import ShapeNetRender, ModelNet40SVM
@@ -32,14 +27,9 @@ def _init_():
     if not os.path.exists('checkpoints/'+args.exp_name+'/'+'models'):
         os.makedirs('checkpoints/'+args.exp_name+'/'+'models')
 
-    # WB_SERVER_URL = "http://202.112.113.241:28282"
-    # WB_KEY = "local-9924b9666281a61be5d62b358e344c790f1c3954"
-    # os.environ["WANDB_BASE_URL"] = WB_SERVER_URL
-    # wandb.login(key=WB_KEY)
-
    
 def train(args, io):
-    # wandb.init(project="CrossPoint", name=args.exp_name)
+    wandb.init(project="CrossPoint", name=args.exp_name)
     
     transform = transforms.Compose([transforms.Resize((224, 224)),
                                 transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
@@ -63,14 +53,12 @@ def train(args, io):
     img_model = ResNet(resnet50(), feat_dim = 2048)
     img_model = img_model.to(device)
         
-    # wandb.watch(point_model)
-    
     if args.resume:
         point_model.load_state_dict(torch.load(args.model_path))
         img_model.load_state_dict(torch.load(args.img_model_path))
         print("Model Loaded !!")
         
-    # NOTE: 不同模型参数，还能这么用
+    # combine parameters of different models
     parameters = list(point_model.parameters()) + list(img_model.parameters())
 
     if args.use_sgd:
@@ -94,7 +82,7 @@ def train(args, io):
         
         point_model.train()
         img_model.train()
-        # wandb_log = {}
+        wandb_log = {}
         print(f'Start training epoch: ({epoch}/{args.epochs})')
         for i, ((data_t1, data_t2), imgs) in enumerate(train_loader):
             data_t1, data_t2, imgs = data_t1.to(device), data_t2.to(device), imgs.to(device)
@@ -128,15 +116,14 @@ def train(args, io):
         # In PyTorch 1.1.0 and later, you should call lr_scheduler.step() after optimizer.step()
         lr_scheduler.step()
     
-        # wandb_log['Train Loss'] = train_losses.avg
-        # wandb_log['Train IMID Loss'] = train_imid_losses.avg
-        # wandb_log['Train CMID Loss'] = train_cmid_losses.avg
+        wandb_log['Train Loss'] = train_losses.avg
+        wandb_log['Train IMID Loss'] = train_imid_losses.avg
+        wandb_log['Train CMID Loss'] = train_cmid_losses.avg
                 
         outstr = 'Train %d, loss: %.6f' % (epoch, train_losses.avg)
         io.cprint(outstr)
         
         # Testing
-        
         train_val_loader = DataLoader(ModelNet40SVM(partition='train', num_points=1024), batch_size=128, shuffle=True)
         test_val_loader = DataLoader(ModelNet40SVM(partition='test', num_points=1024), batch_size=128, shuffle=True)
 
@@ -176,7 +163,7 @@ def train(args, io):
         model_tl = SVC(C = 0.1, kernel ='linear')
         model_tl.fit(feats_train, labels_train)
         test_accuracy = model_tl.score(feats_test, labels_test)
-        # wandb_log['Linear Accuracy'] = test_accuracy
+        wandb_log['Linear Accuracy'] = test_accuracy
         print(f"Linear Accuracy : {test_accuracy}")
         
         if test_accuracy > best_acc:
@@ -196,7 +183,7 @@ def train(args, io):
                                      'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
             torch.save(point_model.state_dict(), save_file)
 
-        # wandb.log(wandb_log)
+        wandb.log(wandb_log)
     
     print('==> Saving Last Model...')
     save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
@@ -255,7 +242,7 @@ if __name__ == "__main__":
 
     _init_()
 
-    io = IOStream('checkpoints/' + args.exp_name + '/run.log')
+    io = IOStream('checkpoints/' + args.exp_name + '/run.log', rank=0)
     io.cprint('%s' % (args))
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -270,7 +257,3 @@ if __name__ == "__main__":
 
     if not args.eval:
         train(args, io)
-    else:
-        test(args, io)
-
-
