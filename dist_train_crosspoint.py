@@ -1,22 +1,17 @@
 from __future__ import print_function
 import os
-import random
-import argparse
 import datetime
 import torch
-import math
 import numpy as np
 import wandb
 from lightly.loss.ntx_ent_loss import NTXentLoss
-import time
 from sklearn.svm import SVC
 
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 import torchvision.transforms as transforms
-from torchvision.models import resnet50, resnet18
+from torchvision.models import resnet50
 from torch.utils.data import DataLoader
 
 # for distributed training
@@ -39,11 +34,6 @@ def _init_():
     if not os.path.exists('checkpoints/'+args.exp_name+'/'+'models'):
         os.makedirs('checkpoints/'+args.exp_name+'/'+'models')
 
-    WB_SERVER_URL = "http://202.112.113.239:28282"
-    WB_KEY = "local-66548ed1d838753aa6c72555da8c798d184591b0"
-    os.environ["WANDB_BASE_URL"] = WB_SERVER_URL
-    wandb.login(key=WB_KEY)
-
 
 def setup(rank):
     # initialization for distibuted training on multiple GPUs
@@ -58,11 +48,12 @@ def cleanup():
 
 
 def train(rank):
+    # initialize wandb once is enough
     if rank == 0:
         wandb.init(project="CrossPoint", name=args.exp_name)
 
     setup(rank)
-    # only write logs on the first gpu device whose rank=0
+
     io = IOStream('checkpoints/' + args.exp_name + '/run.log', rank=rank)
     
     transform = transforms.Compose([transforms.Resize((224, 224)),
@@ -83,17 +74,13 @@ def train(rank):
                               pin_memory=True
                               )
 
-    # device = torch.device("cuda:%s" % args.gpu_id if args.cuda else "cpu")
-
-    # in DGCNN and DGCNN_partseg, args.rank is used to specify the device where get_graph_feature() are executed
+    # in DGCNN and DGCNN_partseg, args.rank is used to specify the device where get_graph_feature() is executed
     args.rank = rank
 
     #Try to load models
     if args.model == 'dgcnn':
-        # point_model = DGCNN(args).to(device)
         point_model = DGCNN(args).to(rank)
     elif args.model == 'dgcnn_seg':
-        # point_model = DGCNN_partseg(args).to(device)
         point_model = DGCNN_partseg(args).to(rank)
     else:
         raise Exception("Not implemented")
@@ -113,8 +100,8 @@ def train(rank):
             torch.load(args.img_model_path, map_location=map_location)
         )
         io.cprint("Model Loaded !!")
-        
-    # NOTE: 不同模型参数
+
+    # combine parameters        
     parameters = list(point_model_ddp.parameters()) + list(img_model_ddp.parameters())
 
     if args.use_sgd:
@@ -139,7 +126,7 @@ def train(rank):
         train_imid_losses = AverageMeter()
         train_cmid_losses = AverageMeter()
         
-        # require by DistributedSampler
+        # required by DistributedSampler
         train_sampler.set_epoch(epoch)
 
         point_model.train()
@@ -164,12 +151,7 @@ def train(rank):
                 
             total_loss = loss_imid + loss_cmid
             total_loss.backward()
-            # for name, param in point_model_ddp.named_parameters():
-            #     if param.grad is None:
-            #         print('point', name)
-            # for name, param in img_model_ddp.named_parameters():
-            #     if param.grad is None:
-            #         print('image', name)
+            
             opt.step()
             
             train_losses.update(total_loss.item(), batch_size)
@@ -182,7 +164,7 @@ def train(rank):
                         % (time, epoch, i, len(train_loader), train_losses.avg, train_imid_losses.avg, train_cmid_losses.avg)
                 io.cprint(outstr)
         
-        # In PyTorch 1.1.0 and later, you should call lr_scheduler.step() after optimizer.step()
+        # In PyTorch 1.1.0 and later, we should call lr_scheduler.step() after optimizer.step()
         lr_scheduler.step()
     
         """ Explanation of the function dist.all_gather_object(list1, train_imid_losses.avg):
@@ -214,10 +196,6 @@ def train(rank):
         io.cprint(outstr)
         
         # Testing
-        """
-        这里SVM训练需要分布式吗？
-            SVM是从 sklearn 导进来的，用不上 DDP 吧
-        """
         train_val_loader = DataLoader(ModelNet40SVM(partition='train', num_points=1024), batch_size=args.test_batch_size, shuffle=True)
         test_val_loader = DataLoader(ModelNet40SVM(partition='test', num_points=1024), batch_size=args.test_batch_size, shuffle=True)
 
@@ -275,39 +253,41 @@ def train(rank):
             wandb_log['Overall Linear Accuracy'] = test_accuracy_avg
             wandb.log(wandb_log)
 
-        if test_accuracy_avg > best_acc:
-            best_acc = test_accuracy_avg
-            io.cprint('==> Saving Best Model...')
-            save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
-                                     'best_model.pth'.format(epoch=epoch))
-            torch.save(point_model_ddp.state_dict(), save_file)
-            
-            save_img_model_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
-                         'img_model_best.pth')
-            torch.save(img_model_ddp.state_dict(), save_img_model_file)
-  
-        if epoch % args.save_freq == 0:
-            io.cprint('==> Saving...')
-            save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
-                                     'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
-            torch.save(point_model_ddp.state_dict(), save_file)
-            save_img_model_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
-                         'img_model_{epoch}.pth'.format(epoch=epoch))
-            torch.save(img_model_ddp.state_dict(), save_img_model_file)
+            if test_accuracy_avg > best_acc:
+                best_acc = test_accuracy_avg
+                io.cprint('==> Saving Best Model...')
+                save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
+                                        'best_model.pth'.format(epoch=epoch))
+                torch.save(point_model_ddp.state_dict(), save_file)
+                
+                save_img_model_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
+                            'img_model_best.pth')
+                torch.save(img_model_ddp.state_dict(), save_img_model_file)
     
-    io.cprint('==> Saving Last Model...')
-    save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
-                             'ckpt_epoch_last.pth')
-    torch.save(point_model_ddp.state_dict(), save_file)
-    save_img_model_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
-                         'img_model_last.pth')
-    torch.save(img_model_ddp.state_dict(), save_img_model_file)
-
-    # We should call wandb.finish() explicitly in multi processes training, otherwise wandb will hang in this process
+            if epoch % args.save_freq == 0:
+                io.cprint('==> Saving...')
+                save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
+                                        'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
+                torch.save(point_model_ddp.state_dict(), save_file)
+                save_img_model_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
+                            'img_model_{epoch}.pth'.format(epoch=epoch))
+                torch.save(img_model_ddp.state_dict(), save_img_model_file)
+    
     if rank == 0:
+        io.cprint('==> Saving Last Model...')
+        save_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
+                                'ckpt_epoch_last.pth')
+        torch.save(point_model_ddp.state_dict(), save_file)
+        save_img_model_file = os.path.join(f'checkpoints/{args.exp_name}/models/',
+                            'img_model_last.pth')
+        torch.save(img_model_ddp.state_dict(), save_img_model_file)
+
+        # We should call wandb.finish() explicitly in multi processes training, 
+        # otherwise wandb will hang in this process
         wandb.finish()
-    cleanup()
+        
     io.close()
+    cleanup()
 
 
 if __name__ == "__main__":
@@ -320,9 +300,9 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     
     if args.cuda:
-        num_device = torch.cuda.device_count()
-        if num_device > 1:
-            io.cprint('CUDA is available! Using %d GPUs for DDP training' % num_device)
+        num_devices = torch.cuda.device_count()
+        if num_devices > 1:
+            io.cprint('%d GPUs is available! Ready for DDP training' % num_devices)
             io.close()
             torch.cuda.manual_seed(args.seed)
             mp.spawn(train, nprocs=args.world_size)
