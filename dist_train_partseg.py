@@ -1,13 +1,10 @@
 from __future__ import print_function
 import os
-import argparse
 import datetime
 import wandb
 import numpy as np
 import sklearn.metrics as metrics
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
@@ -34,11 +31,6 @@ def _init_():
 
     # to fix BlockingIOError: [Errno 11]
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-
-    WB_SERVER_URL = "http://202.112.113.239:28282"
-    WB_KEY = "local-66548ed1d838753aa6c72555da8c798d184591b0"
-    os.environ["WANDB_BASE_URL"] = WB_SERVER_URL
-    wandb.login(key=WB_KEY)
 
 
 def setup(rank):
@@ -81,12 +73,12 @@ def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
 
 
 def train(rank):
+    # initialize wandb once is enough
     if rank == 0:
         wandb.init(project="CrossPoint", name=args.exp_name)
 
     setup(rank)
 
-    # only log text on the first gpu device whose rank=0
     io = IOStream('outputs/' + args.exp_name + '/run.log', rank=rank)
 
     train_dataset = ShapeNetPart(partition='trainval', num_points=args.num_points, class_choice=args.class_choice)
@@ -122,9 +114,8 @@ def train(rank):
                             pin_memory=True,
                             drop_last=False)
     
-    # device = torch.device("cuda:1" if args.cuda else "cpu")
 
-    # in DGCNN and DGCNN_partseg, args.rank is used to specify the device where get_graph_feature() are executed
+    # in DGCNN and DGCNN_partseg, args.rank is used to specify the device where get_graph_feature() is executed
     args.rank = rank
 
     #Try to load models
@@ -133,8 +124,8 @@ def train(rank):
     model = DGCNN_partseg(args, seg_num_all, pretrain=False).to(rank)
     model_ddp = DDP(model, device_ids=[rank], find_unused_parameters=True)
 
-    map_location = torch.device('cuda:%d' % rank)
     # load pretrained model in train_crosspoint.py
+    map_location = torch.device('cuda:%d' % rank)
     pretrained_path = args.model_path
     model_ddp.load_state_dict(
         torch.load(pretrained_path, map_location=map_location), 
@@ -172,15 +163,9 @@ def train(rank):
         train_pred_seg = []
         train_label_seg = []
 
-        # require by DistributedSampler
+        # required by DistributedSampler
         train_sampler.set_epoch(epoch)
 
-        """
-            train_loader的每一项，是一个点云，包含2048个点，每个点是三维坐标
-            data: 一个batch的点云数据                 (batch_size, num_points, 3)
-            label: 对batch点云类别标签，共16个类别     (batch_size, 1)
-            seg: 对应batch中每项点云每个点的语义类别    (batch_size, num_points)
-        """
         for data, label, seg in train_loader:
             seg = seg - seg_start_index
             label_one_hot = np.zeros((label.shape[0], 16))
@@ -251,11 +236,6 @@ def train(rank):
         outstr, test_ious_avg, test_loss_avg, test_acc_avg, test_per_class_acc_avg = test(rank, epoch, model_ddp, test_loader, criterion)
         io.cprint(outstr)
 
-        if test_ious_avg >= best_test_iou:
-            io.cprint('==> Saving Best Model...')
-            best_test_iou = test_ious_avg
-            torch.save(model_ddp.state_dict(), 'outputs/%s/models/model.t7' % args.exp_name)
-
         if rank == 0:    
             wandb_log["Train Loss"] = train_loss_avg
             wandb_log["Train Accuracy"] = train_acc_avg
@@ -267,11 +247,18 @@ def train(rank):
             wandb_log["Test Mean IOU"] = test_ious_avg
             wandb.log(wandb_log)
 
-    # We should call wandb.finish() explicitly in multi processes training, otherwise wandb will hang in this process
+            if test_ious_avg >= best_test_iou:
+                io.cprint('==> Saving Best Model ...')
+                best_test_iou = test_ious_avg
+                torch.save(model_ddp.state_dict(), 'outputs/%s/models/model.t7' % args.exp_name)
+
+    # We should call wandb.finish() explicitly in multi processes training, 
+    # otherwise wandb will hang in this process
     if rank == 0:
         wandb.finish()
-    cleanup()
+
     io.close()
+    cleanup()
 
 
 def test(rank, epoch, model, test_loader, criterion):
@@ -353,9 +340,9 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
 
     if args.cuda:
-        num_device = torch.cuda.device_count()
-        if num_device > 1:
-            io.cprint('CUDA is available! Using %d GPUs for DDP training' % num_device)
+        num_devices = torch.cuda.device_count()
+        if num_devices > 1:
+            io.cprint('%d GPUs is available! Ready for DDP training' % num_devices)
             io.close()
             torch.cuda.manual_seed(args.seed)
             mp.spawn(train, nprocs=args.world_size)
