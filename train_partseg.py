@@ -5,7 +5,6 @@ import numpy as np
 import sklearn.metrics as metrics
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR, StepLR
 
@@ -15,10 +14,10 @@ from torch.utils.data import DataLoader
 from util import cal_loss, IOStream
 import wandb
 
+
 global class_cnts
 class_indexs = np.zeros((16,), dtype=int)
-# global visual_warning
-# visual_warning = True
+
 
 class_choices = ['airplane', 'bag', 'cap', 'car', 'chair', 'earphone', 'guitar', 'knife', 'lamp', 'laptop', 'motorbike', 'mug', 'pistol', 'rocket', 'skateboard', 'table']
 seg_num = [4, 2, 2, 4, 4, 3, 3, 2, 4, 2, 6, 2, 3, 3, 3, 3]
@@ -32,11 +31,6 @@ def _init_():
         os.makedirs('outputs/'+args.exp_name)
     if not os.path.exists('outputs/'+args.exp_name+'/'+'models'):
         os.makedirs('outputs/'+args.exp_name+'/'+'models')
-
-    WB_SERVER_URL = "http://202.112.113.241:28282"
-    WB_KEY = "local-9924b9666281a61be5d62b358e344c790f1c3954"
-    os.environ["WANDB_BASE_URL"] = WB_SERVER_URL
-    wandb.login(key=WB_KEY)
 
 
 def calculate_shape_IoU(pred_np, seg_np, label, class_choice, visual=False):
@@ -80,7 +74,6 @@ def train(args, io):
     seg_start_index = train_loader.dataset.seg_start_index
     model = DGCNN_partseg(args, seg_num_all, pretrain=False).to(device)    
         
-    # comment by jerry
     model_path = args.pretrained_path
     net = torch.load(model_path)
     model.load_state_dict(net, strict=False)
@@ -101,7 +94,6 @@ def train(args, io):
     criterion = cal_loss
     
     wandb.init(project="CrossPoint", name=args.exp_name)
-    wandb.watch(model)
 
     best_test_iou = 0
     for epoch in range(args.epochs):
@@ -118,12 +110,6 @@ def train(args, io):
         train_pred_seg = []
         train_label_seg = []
 
-        """
-            train_loader的每一项，是一个点云，包含2048个点，每个点是三维坐标
-            data: 一个batch的点云数据                 (batch_size, num_points, 3)
-            label: 对batch点云类别标签，共16个类别     (batch_size, 1)
-            seg: 对应batch中每项点云每个点的语义类别    (batch_size, num_points)
-        """
         # print('type(train_loader):', type(train_loader))
         for data, label, seg in train_loader:
             seg = seg - seg_start_index
@@ -241,7 +227,6 @@ def test(args, io):
     #Try to load models
     seg_num_all = test_loader.dataset.seg_num_all
     seg_start_index = test_loader.dataset.seg_start_index
-    partseg_colors = test_loader.dataset.partseg_colors
     if args.model == 'dgcnn':
         model = DGCNN_partseg(args, seg_num_all).to(device)
     else:
@@ -251,7 +236,6 @@ def test(args, io):
     model.load_state_dict(torch.load(args.model_path))
     model = model.eval()
     test_acc = 0.0
-    count = 0.0
     test_true_cls = []
     test_pred_cls = []
     test_true_seg = []
@@ -265,7 +249,6 @@ def test(args, io):
         label_one_hot = torch.from_numpy(label_one_hot.astype(np.float32))
         data, label_one_hot, seg = data.to(device), label_one_hot.to(device), seg.to(device)
         data = data.permute(0, 2, 1)
-        batch_size = data.size()[0]
         seg_pred = model(data, label_one_hot)
         seg_pred = seg_pred.permute(0, 2, 1).contiguous()
         pred = seg_pred.max(dim=2)[1]
@@ -349,7 +332,7 @@ if __name__ == "__main__":
 
     _init_()
 
-    io = IOStream('outputs/' + args.exp_name + '/run.log')
+    io = IOStream('outputs/' + args.exp_name + '/run.log', rank=0)
     io.cprint(str(args))
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
