@@ -119,3 +119,51 @@
 
         - 目前决定了一条思路，用SJTU的代码，嵌入自己的模型里，首先要做的是在数据集上跑起来，验证已有模型的效果
             - SJTU 这个实现是单卡的，后面迁移到我的实现，必须上多卡，否则太慢了
+            - 发现个问题，模型输入和backbone最初接收维度对不上，但是代码成功训练起来了，说明我的理解不对
+            - 【破案】分类、分割，点特征维度设置是不一样的，见 args.input_dim；因此不能在代码里把这个维度写死，而是传入变量
+
+6. 复现 Point-Transformer-SJTU
+    - 分类结果
+        - Best Instance Accuracy: 0.887500, Class Accuracy: 0.847952
+    - part分割结果
+
+    - 下面很重要的工作是调优
+        1. 回顾模型架构对不对
+        2. 回顾数据增强策略
+        3. 如何设计参数调优策略
+        - 效果为王
+            - ShapeNetPart 这个任务，16个物体类别，50个part，每个类别的物体，分割准确性不同，而且差距很大，比如 59 vs 93，原因是什么呢？
+            - 有的物体本身比较难分？还是说这些物体样本太少
+
+    - 效果都不太理想，还不如之前的 point cloud transformer (PCT)
+        - 效果不理想可以换嘛，没必要直接敲定它 Point-Transformer-SJTU
+        - PCT_pytorch 之前测过，训练600 epoch能达到92.9 - ModelNet40，起码比这个好
+        - NLP和cv告诉我们，Transformer会在数据规模上去之后发挥更好作用，现在显然没达到很大规模，但是PCT为啥这么好呢？
+        - 先看看能不能把效果调上去
+        - 进一步我在想，为什么要选 Point Transformer 做为入手的点，都没有官方代码
+
+    - 既然模型自己写出来了，我觉得对应的训练代码也自己写吧，直接写成分布式训练
+
+    - 借鉴一下别人的做法，把Point-Bert预训练好的模型，用作特征抽取器，直接搞下游任务，加速实验过程？
+
+6. CrossPoint 推进剩余实验
+    - torch.load('best_model.pth')遇到问题，网上说是因为模型corrupted，但训练代码中没有任何迹象表明corrupted
+    - 可我分明记得，之前load成功过？确实是的
+    - 【明确】train_partseg.py 在ShapeNetPart数据集调优的时候，成功加载了预训练模型  checkpoints/crosspoint_dgcnn_seg2/models/best_model.pth
+        - 那为什么，eval_ssl.ipynb加载就报错呢？
+            - 首先加载的模型不是一个，这里是 checkpoints/crosspoint_dgcnn_cls2/models/best_model.pth
+            - 其次加载的方法一样吗？
+            - 成功的 checkpoints/crosspoint_dgcnn_seg2/models/best_model.pth，是分布式训练得到的模型，加载时候也对上了分布式模型，但是
+                失败的 checkpoints/crosspoint_dgcnn_cls2/models/best_model.pth 是分布式训练得到的，但是加载的时候是单卡，是不是这个原因？
+    - 【明确】checkpoints/crosspoint_dgcnn_cls2/models/best_model.pth 加载失败，是因为保存的时候有问题，再跑一次就得了
+
+    - eval_ssl.ipynb 中，预训练模型加载感觉不对，key 没对上，导致一部分权重没加载出来，提取的特征不够好，可能对最终SVM结果有影响
+        - 为什么crosspoint用小的正则化参数 c=0.01，效果好，而我用大的才好呢？
+        - 反正是模型加载和作者不一致，谁出了问题？
+        - 效果也没论文报告的好
+
+        - 但是 eval_fewshot.py 的时候，就没有报 Model key unmatch，是因为在 py 文件里的原因吗？
+
+    - 根据作者提供的代码，跑出来的结果和论文相差挺大，感觉不是简单调差就能上去的
+
+5. 今天把vision transformer模型搞定
