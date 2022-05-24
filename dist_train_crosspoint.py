@@ -309,6 +309,7 @@ if __name__ == "__main__":
             io.close()
             # Set seed for generating random numbers for all GPUs, and 
             # torch.cuda.manual_seed() is insufficient to get determinism for all GPUs
+            torch.cuda.manual_seed_all(args.seed)
             mp.spawn(train, nprocs=args.world_size)
         else:
             io.cprint('Only one GPU is available, please use train_crosspoint.py')
