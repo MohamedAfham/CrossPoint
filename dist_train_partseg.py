@@ -32,6 +32,9 @@ def _init_():
     # to fix BlockingIOError: [Errno 11]
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
+    os.environ["WANDB_BASE_URL"] = args.wb_url
+    wandb.login(key=args.wb_key)
+
 
 def setup(rank):
     # initialization for distibuted training on multiple GPUs
@@ -79,7 +82,8 @@ def train(rank):
 
     setup(rank)
 
-    io = IOStream('outputs/' + args.exp_name + '/run.log', rank=rank)
+    log_file = f'{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}.log'
+    io = IOStream('outputs/' + args.exp_name + f'/{log_file}', rank=rank)
 
     train_dataset = ShapeNetPart(partition='trainval', num_points=args.num_points, class_choice=args.class_choice)
     train_sampler = DistributedSampler(train_dataset, num_replicas=args.world_size, rank=rank)
@@ -151,18 +155,14 @@ def train(rank):
         ####################
         # Train
         ####################
-        if rank == 0:
-            wandb_log = {}
-
-        # train_loss = 0.0
         train_loss = AverageMeter()
-        model_ddp.train()
         train_true_cls = []
         train_pred_cls = []
         train_true_seg = []
         train_pred_seg = []
         train_label_seg = []
 
+        model_ddp.train()
         # required by DistributedSampler
         train_sampler.set_epoch(epoch)
 
@@ -236,7 +236,8 @@ def train(rank):
         outstr, test_ious_avg, test_loss_avg, test_acc_avg, test_per_class_acc_avg = test(rank, epoch, model_ddp, test_loader, criterion)
         io.cprint(outstr)
 
-        if rank == 0:    
+        if rank == 0:
+            wandb_log = {}
             wandb_log["Train Loss"] = train_loss_avg
             wandb_log["Train Accuracy"] = train_acc_avg
             wandb_log["Train Per Class Accuracy"] = train_per_class_acc_avg
@@ -344,7 +345,9 @@ if __name__ == "__main__":
         if num_devices > 1:
             io.cprint('%d GPUs is available! Ready for DDP training' % num_devices)
             io.close()
-            torch.cuda.manual_seed(args.seed)
+            # Set seed for generating random numbers for all GPUs, and 
+            # torch.cuda.manual_seed() is insufficient to get determinism for all GPUs
+            torch.cuda.manual_seed_all(args.seed)
             mp.spawn(train, nprocs=args.world_size)
         else:
             io.cprint('Only one GPU is available, please use train_partseg.py')

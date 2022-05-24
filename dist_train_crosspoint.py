@@ -34,6 +34,9 @@ def _init_():
     if not os.path.exists('checkpoints/'+args.exp_name+'/'+'models'):
         os.makedirs('checkpoints/'+args.exp_name+'/'+'models')
 
+    os.environ["WANDB_BASE_URL"] = args.wb_url
+    wandb.login(key=args.wb_key)
+
 
 def setup(rank):
     # initialization for distibuted training on multiple GPUs
@@ -169,7 +172,7 @@ def train(rank):
     
         """ Explanation of the function dist.all_gather_object(list1, train_imid_losses.avg):
                 list1: first parameter - a python list,
-                        the length of list1 should be equavilent to the number of processes (world_size)
+                        the length of list1 should be equivalent to the number of processes (world_size)
 
                 train_imid_losses.avg: second parameter - a python object,
                         all_gather_object() gather the values of the second parameter across all devices within the process group, 
@@ -304,7 +307,8 @@ if __name__ == "__main__":
         if num_devices > 1:
             io.cprint('%d GPUs is available! Ready for DDP training' % num_devices)
             io.close()
-            torch.cuda.manual_seed(args.seed)
+            # Set seed for generating random numbers for all GPUs, and 
+            # torch.cuda.manual_seed() is insufficient to get determinism for all GPUs
             mp.spawn(train, nprocs=args.world_size)
         else:
             io.cprint('Only one GPU is available, please use train_crosspoint.py')
