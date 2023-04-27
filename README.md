@@ -19,7 +19,7 @@ If you find our work, this repository, or pretrained models useful, please consi
 * **(Mar 25, 2023)**
   * An implementation supporting PyTorchDistributedDataParallel (DDP) is available [here](https://github.com/auniquesun/CrossPoint-DDP). Thanks to [Jerry Sun](https://auniquesun.github.io/)
 * **(Mar 2, 2022)**
-  * Paper accepted at CVPR 2023 :tada: 
+  * Paper accepted at CVPR 2022 :tada: 
 * **(Mar 2, 2022)** 
   * Training and evaluation codes for [CrossPoint](https://openaccess.thecvf.com/content/CVPR2022/html/Afham_CrossPoint_Self-Supervised_Cross-Modal_Contrastive_Learning_for_3D_Point_Cloud_Understanding_CVPR_2022_paper.html), along with pretrained models are released.
 
